@@ -51,6 +51,10 @@ static const CGFloat VENTokenFieldDefaultMaxHeight          = 150.0;
 
 @implementation VENTokenField
 
+- (void)setInputAccessoryView:(UIView *)accessoryView {
+    self.inputTextField.inputAccessoryView = accessoryView;
+}
+
 - (instancetype)initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];

@@ -69,6 +69,9 @@
 
 @property (copy, nonatomic) NSString *placeholderText;
 
+
+- (void)setInputAccessoryView:(UIView*) accessoryView;
+
 - (void)setColorScheme:(UIColor *)color;
 
 @end
