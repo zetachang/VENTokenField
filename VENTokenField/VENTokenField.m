@@ -44,6 +44,7 @@ static const CGFloat VENTokenFieldDefaultMaxHeight          = 150.0;
 @property (strong, nonatomic) VENBackspaceTextField *inputTextField;
 @property (strong, nonatomic) UIColor *colorScheme;
 @property (strong, nonatomic) UILabel *collapsedLabel;
+@property (nonatomic) BOOL layoutReload;
 
 @end
 
@@ -76,9 +77,23 @@ static const CGFloat VENTokenFieldDefaultMaxHeight          = 150.0;
     return [self.inputTextField resignFirstResponder];
 }
 
+- (void)layoutSubviews {
+    // Add invisible text field to handle backspace when we don't have a real first responder.
+    [self layoutInvisibleTextField];
+    
+    [self layoutScrollView];
+    
+    
+    if (!self.layoutReload) {
+        [self reloadData];
+        self.layoutReload = YES;
+    }
+}
+
 - (void)setUpInit
 {
     // Set up default values.
+    self.layoutReload = NO;
     self.maxHeight = VENTokenFieldDefaultMaxHeight;
     self.verticalInset = VENTokenFieldDefaultVerticalInset;
     self.horizontalInset = VENTokenFieldDefaultHorizontalInset;
@@ -92,12 +107,6 @@ static const CGFloat VENTokenFieldDefaultMaxHeight          = 150.0;
     _toLabelText = NSLocalizedString(@"To:", nil);
 
     self.originalHeight = CGRectGetHeight(self.frame);
-
-    // Add invisible text field to handle backspace when we don't have a real first responder.
-    [self layoutInvisibleTextField];
-
-    [self layoutScrollView];
-    [self reloadData];
 }
 
 - (void)collapse
@@ -189,16 +198,18 @@ static const CGFloat VENTokenFieldDefaultMaxHeight          = 150.0;
 
 - (void)layoutScrollView
 {
-    self.scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(self.frame), CGRectGetHeight(self.frame))];
-    self.scrollView.scrollsToTop = NO;
-    self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.frame) - self.horizontalInset * 2, CGRectGetHeight(self.frame) - self.verticalInset * 2);
-    self.scrollView.contentInset = UIEdgeInsetsMake(self.verticalInset,
-                                                    self.horizontalInset,
-                                                    self.verticalInset,
-                                                    self.horizontalInset);
-    self.scrollView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
-
-    [self addSubview:self.scrollView];
+    if (!self.scrollView) {
+        self.scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(self.frame), CGRectGetHeight(self.frame))];
+        self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.frame) - self.horizontalInset * 2, CGRectGetHeight(self.frame) - self.verticalInset * 2);
+        self.scrollView.contentInset = UIEdgeInsetsMake(self.verticalInset,
+                                                        self.horizontalInset,
+                                                        self.verticalInset,
+                                                        self.horizontalInset);
+        self.scrollView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+        self.scrollView.translatesAutoresizingMaskIntoConstraints = YES;
+        
+        [self addSubview:self.scrollView];
+    }
 }
 
 - (void)layoutInputTextFieldWithCurrentX:(CGFloat *)currentX currentY:(CGFloat *)currentY
@@ -287,9 +298,12 @@ static const CGFloat VENTokenFieldDefaultMaxHeight          = 150.0;
 
 - (void)layoutInvisibleTextField
 {
-    self.invisibleTextField = [[VENBackspaceTextField alloc] initWithFrame:CGRectZero];
-    self.invisibleTextField.delegate = self;
-    [self addSubview:self.invisibleTextField];
+    if (!self.invisibleTextField) {
+        self.invisibleTextField = [[VENBackspaceTextField alloc] initWithFrame:CGRectZero];
+        self.invisibleTextField.delegate = self;
+        [self addSubview:self.invisibleTextField];
+        [self reloadData];
+    }
 }
 
 - (void)inputTextFieldBecomeFirstResponder
